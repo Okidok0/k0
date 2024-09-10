@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Query System</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
+        .container { max-width: 1200px; margin: auto; padding: 20px; }
+        h1 {color: #ff69b4; background-color: #ffe5ec; border: 2px solid pink; padding: 10px; text-align: center; border-radius: 10px; margin-top: 30px; }
+        .filter-buttons { display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 20px; }
+        .filter-button { background-color: #D2EFFD; color: black; font-weight: bold; border: none; padding: 10px; cursor: pointer; border-radius: 5px; margin: 5px; width: 113px; transition: all 0.3s; height: 48px; display: flex; align-items: center; justify-content: center; }
+        .filter-button:nth-child(2) { background-color:  #fae3d8; }
+        .filter-button:nth-child(3) { background-color:  #f6f9fb; }
+        .filter-button:nth-child(4) { background-color:  #d6cafa; }
+        .filter-button:nth-child(5) { background-color:  #e9f2d0; }
+        .filter-button:nth-child(6) { background-color:  #f9e2ec; }
+        .filter-button:nth-child(7) { background-color:  #fdf2d8; }
+        .filter-button:nth-child(8) { background-color:  #e6dbe9; }
+        .filter-button.active { border: 2px solid pink; }
+        .filter-row { display: flex; justify-content: space-between; }
+        .card-buttons { font-size: 10px; display: flex; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 20px; }
+        .card-button { border: 2px solid #ddd; padding: 5px; cursor: pointer; text-align: center; background-color: white; margin: 0; }
+        .selected { border-color: pink; background-color: #ffe5ec; }
+        .account-list { margin-top: 20px; }
+        .account { border: 2px solid pink; padding: 10px; margin-bottom: 10px; }
+        img { width: 50px; height: 50px; }
+        .card-images { display: flex; flex-wrap: wrap; }
+        .card-image { margin-right: 10px; text-align: center; }
+        .search-button { font-weight: bold; }
+        .lang-button { position: absolute; top: 10px; right: 10px; }
+        .lang-button button { background-color: #ffe5ec; color: #ff1493; border: none; padding: 10px; cursor: pointer; border-radius: 5px; }
+        .lang-menu { display: none; position: absolute; background: white; border: 1px solid #ddd; z-index: 1; width: 98px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .lang-menu.show { display: block; }
+        .lang-menu button { border: 2px solid pink; padding: 10px; width: 100%; text-align: center; cursor: pointer; background-color: #ffe5ec; }
+        .lang-menu button:hover { background-color: #f0f0f0; }
+        .lang-menu button.active { background-color: #ff69b4; color: white; }
+        .cart-container { position: fixed; bottom: 15px; right: 15px; width: 235px; }
+        .search-button { width: 50%; background-color: #ffe5ec; color: #ff69b4; padding: 10px 20px; border-radius: 20px; border: 2px solid pink; cursor: pointer; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-bottom: 10px; }
+        .search-button:hover { background-color: #ffc0cb; }
+        .sort-button { margin-bottom: 20px; text-align: left; position: relative; }
+        .sort-button button { background-color: #ffe5ec; color: #ff1493; border: none; width: 65px; padding: 10px; cursor: pointer; border-radius: 5px; }
+        .sort-menu { display: none; position: absolute; background: white; border: 1px solid #ddd; z-index: 1; width: 63px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .sort-menu.show { display: block; }
+        .sort-menu button { border: 2px solid pink; padding: 10px; width: 100%; text-align: center; cursor: pointer; background-color: #ffe5ec; }
+        .sort-menu button:hover { background-color: #f0f0f0; }
+        .sort-menu button.active { background-color: #ff69b4; color: white; }
+        .cart { background-color: #fff; border: 2px solid pink; padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); border-radius: 10px; }
+        .cart h3 { margin: 0; margin-bottom: 10px; }
+        #cartItems { display: flex; flex-wrap: wrap; justify-content: flex-start; max-height: 135px; overflow-y: auto; }
+        .cart-item { margin: 5px; }
+        .cart-item img { width: 40px; height: 40px; cursor: pointer; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: #ffe5ec; color: #ff69b4; padding: 20px; border-radius: 10px; max-width: 80%; text-align: center; border: 2px solid pink; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">Card Query System</h1>
+        <div class="lang-button">
+            <button onclick="toggleLanguageMenu(event)">Language/言語</button>
+            <div id="langMenu" class="lang-menu">
+                <button onclick="switchLanguage('en')" class="active">English</button>
+                <button onclick="switchLanguage('jp')">日本語</button>
+            </div>
+        </div>
+
+        <div class="sort-button">
+            <button onclick="toggleSortMenu(event)">Sort</button>
+            <div id="sortMenu" class="sort-menu">
+                <button onclick="changeSort('asc')" class="active">ASC</button>
+                <button onclick="changeSort('desc')">DESC</button>
+            </div>
+        </div>
+
+        <div class="filter-buttons">
+            <button class="filter-button active" onclick="filterCards('all')">ALL CARDS</button>
+            <button class="filter-button" onclick="filterCards('lim')">LIMITED</button>
+            <button class="filter-button" onclick="filterCards('vs')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/virtualsinger/logo.png.webp" alt="VS" style="width: 64px; height: 28px;">
+            </button>
+            <button class="filter-button" onclick="filterCards('ln')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/unite01/logo.png.webp" alt="L/n" style="width: 64px; height: 28px;">
+            </button>
+            <button class="filter-button" onclick="filterCards('mmj')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/unite02/logo.png.webp" alt="MMJ!" style="width: 64px; height: 28px;">
+            </button>
+            <button class="filter-button" onclick="filterCards('vbs')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/unite03/logo.png.webp" alt="VBS" style="width: 64px; height: 28px;">
+            </button>
+            <button class="filter-button" onclick="filterCards('wxs')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/unite04/logo.png.webp" alt="W×S" style="width: 64px; height: 28px;">
+            </button>
+            <button class="filter-button" onclick="filterCards('25ji')">
+                <img src="https://pjsekai.sega.jp/assets/data/webp/character/unite05/logo.png.webp" alt="25ji" style="width: 64px; height: 28px;">
+            </button>
+        </div>
+
+        <div class="card-buttons" id="cardButtons">
+
+        </div>
+
+        <div class="account-list" id="accountList"></div>
+    </div>
+
+    <div class="cart-container">
+        <button class="search-button" onclick="queryAccounts()" id="searchButton">Search</button>
+        <div class="cart">
+            <h3 id="cartTitle">Selected card(s)</h3>
+            <div id="cartItems"></div>
+        </div>
+    </div>
+
+    <div id="noAccountsModal" class="modal-overlay">
+        <div class="modal-content">
+            <p id="noAccountsMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        const cardData = {
+            '1': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666004@!80px', name: '[LIM]', group: ['ln', 'lim']},
+            '2': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666088@!80px', name: ' ', group: ['vs'] },
+            '3': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666092@!80px', name: ' ', group: ['vs'] },
+            '4': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666096@!80px', name: ' ', group: ['vs'] },
+            '5': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666109@!80px', name: ' ', group: ['ln'] },
+            '6': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666110@!80px', name: ' ', group: ['vs'] },
+            '7': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666111@!80px', name: ' ', group: ['ln'] },
+            '8': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666114@!80px', name: ' ', group: ['25ji'] },
+            '9': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666115@!80px', name: ' ', group: ['25ji'] },
+            '10': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666116@!80px', name: ' ', group: ['vs'] },
+            '11': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666119@!80px', name: ' ', group: ['wxs'] },
+            '12': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666120@!80px', name: ' ', group: ['wxs'] },
+            '13': { url: 'https://mcmmd.oss-cn-beijing.aliyuncs.com/666121@!80px', name: ' ', group: ['vs'] },
+        };
+        const accounts = [
+            { id: 1, cards: ['11', '5', '1'] },
+            { id: 2, cards: ['1', '3', '4', '5', '7', '8', '9', '11'] } 
+        ];
+
+        let selectedCards = [];
+        let currentLanguage = 'en';
+        let currentSort = 'asc';
+
+        function toggleSortMenu(event) {
+            event.stopPropagation();
+            const sortMenu = document.getElementById('sortMenu');
+            const langMenu = document.getElementById('langMenu');
+            langMenu.classList.remove('show');
+            sortMenu.classList.toggle('show');
+            if (sortMenu.classList.contains('show')) {
+                document.addEventListener('click', closeMenus);
+            } else {
+                document.removeEventListener('click', closeMenus);
+            }
+        }
+
+        function changeSort(sortOrder) {
+            currentSort = sortOrder;
+            const sortButtons = document.querySelectorAll('#sortMenu button');
+            sortButtons.forEach(button => button.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            sortCards();
+            closeMenus();
+        }
+
+        function sortCards() {
+            const cardButtons = document.getElementById('cardButtons');
+            const sortedCards = Array.from(cardButtons.children).sort((a, b) => {
+                const idA = parseInt(a.querySelector('img').alt.split(' ')[1]);
+                const idB = parseInt(b.querySelector('img').alt.split(' ')[1]);
+                return currentSort === 'asc' ? idA - idB : idB - idA;
+            });
+            sortedCards.forEach(card => cardButtons.appendChild(card));
+        }
+
+        function initializeCardButtons() {
+            const cardButtons = document.getElementById('cardButtons');
+            const sortedCardIds = Object.keys(cardData).sort((a, b) => currentSort === 'asc' ? a - b : b - a);
+            
+            for (const id of sortedCardIds) {
+                const card = cardData[id];
+                const button = document.createElement('div');
+                button.className = 'card-button';
+                button.onclick = () => toggleCard(id);
+                button.innerHTML = `
+                    <img src="${card.url}" alt="Card ${id}"><br>${id} ${card.name}
+                `;
+                cardButtons.appendChild(button);
+            }
+        }
+
+        function toggleCard(card) {
+            const index = selectedCards.indexOf(card);
+            const cardButton = document.querySelector(`.card-button img[alt="Card ${card}"]`).parentElement;
+            
+            if (index > -1) {
+                selectedCards.splice(index, 1);
+                cardButton.classList.remove('selected'); removeFromCart(card);
+            } else {
+                selectedCards.push(card);
+                cardButton.classList.add('selected'); addToCart(card);
+            }
+        }
+
+        function addToCart(card) {
+            const cartItems = document.getElementById('cartItems');
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item';
+            cartItem.id = `cart-item-${card}`;
+
+            const img = document.createElement('img');
+            img.src = cardData[card].url;
+            img.alt = `Card ${card}`;
+            img.onclick = () => toggleCard(card);
+
+            cartItem.appendChild(img);
+            cartItems.appendChild(cartItem);
+        }
+
+        function removeFromCart(card) {
+            const cartItem = document.getElementById(`cart-item-${card}`);
+            if (cartItem) {
+                cartItem.remove();
+            }
+        }
+
+        function filterCards(filter) {
+            const filterButtons = document.querySelectorAll('.filter-button');
+            filterButtons.forEach(button => button.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const cardButtons = document.querySelectorAll('.card-button');
+            cardButtons.forEach(button => {
+                const cardId = button.querySelector('img').alt.split(' ')[1];
+                const cardGroups = cardData[cardId].group;
+                if (filter === 'all' || cardGroups.includes (filter)) {
+                    button.style.display = 'block';
+                } else {
+                    button.style.display = 'none';
+                }
+            });
+        }
+
+        function queryAccounts() {
+            const results = accounts.filter(account => selectedCards.every(card => account.cards.includes(card)));
+
+            const accountList = document.getElementById('accountList');
+            accountList.innerHTML = '';
+            if (results.length > 0) {
+                results.forEach(account => {
+                    const accountDiv = document.createElement('div');
+                    accountDiv.className = 'account';
+                    accountDiv.innerHTML = `Account ID: ${account.id}<br>`;
+                    
+                    const cardContainer = document.createElement('div');
+                    cardContainer.className = 'card-images';
+
+                    const sortedCards = account.cards.sort((a, b) => b - a);
+                    sortedCards.forEach(card => {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'card-image';
+                        cardDiv.innerHTML = `<img src="${cardData[card].url}" alt="Card ${card}" style="width: 50px; height: 50px;"><br>${cardData[card].name}`;
+                        cardContainer.appendChild(cardDiv);
+                    });
+
+                    accountDiv.appendChild(cardContainer);
+                    accountList.appendChild(accountDiv);
+                });
+            } else {
+                showModal();
+            }
+        }
+
+        function showModal() {
+            const modal = document.getElementById('noAccountsModal');
+            const message = document.getElementById('noAccountsMessage');
+            message.textContent = currentLanguage === 'en' ? 'No accounts found.' : 'アカウントが見つかりません。';
+            modal.style.display = 'flex';
+
+            setTimeout(() => {
+                closeModal();
+            }, 3000);
+            modal.onclick = closeModal;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('noAccountsModal');
+            modal.style.display = 'none';
+        }
+
+        function toggleLanguageMenu(event) {
+            event.stopPropagation();
+            const langMenu = document.getElementById('langMenu');
+            const sortMenu = document.getElementById('sortMenu');
+            sortMenu.classList.remove('show');
+            langMenu.classList.toggle('show');
+            if (langMenu.classList.contains('show')) {
+                document.addEventListener('click', closeMenus);
+            } else {
+                document.removeEventListener('click', closeMenus);
+            }
+        }
+
+        function closeMenus() {
+            const langMenu = document.getElementById('langMenu');
+            const sortMenu = document.getElementById('sortMenu');
+            langMenu.classList.remove('show');
+            sortMenu.classList.remove('show');
+            document.removeEventListener('click', closeMenus);
+        }
+
+        let noAccountsMessage = 'No accounts found.';
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            const title = document.getElementById('title');
+            const searchButton = document.getElementById('searchButton');
+            const sortButton = document.querySelector('.sort-button > button');
+            const ascButton = document.querySelector('#sortMenu button:first-child');
+            const descButton = document.querySelector('#sortMenu button:last-child');
+            const cartTitle = document.getElementById('cartTitle');
+            const langButtons = document.querySelectorAll('#langMenu button');
+            langButtons.forEach(button => button.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            if (lang === 'jp') {
+                title.textContent = 'カード検索システム';
+                searchButton.textContent = '検索';
+                sortButton.textContent = '並び替え';
+                ascButton.textContent = '昇順';
+                descButton.textContent = '降順';
+                document.querySelector('.filter-button:nth-child(1)').textContent = '全て';
+                document.querySelector('.filter-button:nth-child(2)').textContent = '限定';
+                cartTitle.textContent = '選択したカード';
+                noAccountsMessage = 'アカウントが見つかりません。';
+                currentLanguage = 'jp';
+            } else {
+                title.textContent = 'Card Query System';
+                searchButton.textContent = 'Search';
+                sortButton.textContent = 'Sort';
+                ascButton.textContent = 'ASC';
+                descButton.textContent = 'DESC';
+                document.querySelector('.filter-button:nth-child(1)').textContent = 'ALL CARDS';
+                document.querySelector('.filter-button:nth-child(2)').textContent = 'LIMITED';
+                cartTitle.textContent = 'Selected card(s)';
+                noAccountsMessage = 'No accounts found.';
+                currentLanguage = 'en';
+            }
+            if (accountList.textContent === 'No accounts found.' || accountList.textContent === 'アカウントが見つかりません。') {
+                accountList.textContent = noAccountsMessage;
+            }
+            closeMenus();
+        }
+        window.onload = function() {
+            initializeCardButtons();
+            sortCards();
+        };
+    </script>
+</body>
+</html>
